@@ -41,8 +41,7 @@ def get_cython_extensions():
                 path.join(package_dir, "_gridrec.pyx"),
                 path.join(package_dir, "_gridrec_backproj.c"),
                 path.join(package_dir, "_gridrec_fwdproj.c"),
-                path.join(package_dir, "_filter.c"),
-                path.join(package_dir, "_filter.h"),
+                path.join(package_dir, "_filters.c"),
             ],
             **common_extension_args
         )
