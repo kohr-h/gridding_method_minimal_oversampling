@@ -41,6 +41,8 @@ def get_cython_extensions():
                 path.join(package_dir, "_gridrec.pyx"),
                 path.join(package_dir, "_gridrec_backproj.c"),
                 path.join(package_dir, "_gridrec_fwdproj.c"),
+                path.join(package_dir, "_filter.c"),
+                path.join(package_dir, "_filter.h"),
             ],
             **common_extension_args
         )
@@ -69,12 +71,7 @@ class CleanCommand(Command):
         self._clean_trees = []
         self._clean_exclude = []
         # Clean Cython generated files and cache
-        gen_file_exts = [".pyc",
-                    ".so",
-                    ".o",
-                    ".pyo",
-                    ".pyd",
-                    ".orig",]
+        gen_file_exts = [".pyc", ".so", ".o", ".pyo", ".pyd", ".orig"]
         for root, dirs, files in os.walk(package_dir):
             for f in files:
                 if f in self._clean_exclude:

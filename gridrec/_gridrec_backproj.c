@@ -1,8 +1,8 @@
-/********************************************************************  
+/********************************************************************
  ********************************************************************
  ***                                                              ***
  ***         REGRIDDING BACKPROJECTION OPERATOR FOR PYNNGRID      ***
- ***                                                              *** 
+ ***                                                              ***
  ***             Written by F. Arcadu on the 18/03/2014           ***
  ***                                                              ***
  ********************************************************************
@@ -11,44 +11,19 @@
 
 
 
-/********************************************************************
- ********************************************************************
- ***                                                              ***
- ***                             HEADERS                          ***
- ***                                                              ***
- ********************************************************************
- ********************************************************************/
+#include "_filters.h"
 
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-#ifndef _FILTERS_LIB
-#define _FILTERS_LIB
-#include "filters.h"
-#endif
-
 #include <fftw3.h>
-
 #include <time.h>
 
 
-
-
-/********************************************************************
- ********************************************************************
- ***                                                              ***
- ***                             MACROS                           ***
- ***                                                              ***
- ********************************************************************
- ********************************************************************/
-
-//#define convolv_nn(X) ( lut[ (int)(X+0.5) ])
-//#define convolv_lin(X) ( ( ceil(X) - X ) * lut[ (int) floor(X)] + ( X - floor(X) ) * lut[ (int) ceil(X)] )
 #define myAbs(X) ((X)<0 ? -(X) : (X))
 #define PI 3.141592653589793
-#define C 7.0 
+#define C 7.0
 
 
 
@@ -61,9 +36,9 @@
  ********************************************************************
  ********************************************************************/
 
-void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , float *param , 
+void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , float *param ,
                           float *lut, float *deapod, float *filter_ext , float *rec, char *fftwfn ) {
-    
+
   /*
    *   Define variables
    */
@@ -82,11 +57,11 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
   unsigned long i, j, k, w, n, index;
   unsigned long iul, ivl, iuh, ivh, iv, iu;
   int ltbl;       // Number of PSWF elements
-  
+
   long ustart, vstart, ufin, vfin;
-  
+
   float Cdata1R, Cdata1I, Cdata2R, Cdata2I;
-  float Ctmp1R, Ctmp1I, Ctmp2R, Ctmp2I, Ctmp3R, Ctmp3I;     
+  float Ctmp1R, Ctmp1I, Ctmp2R, Ctmp2I, Ctmp3R, Ctmp3I;
   float U, V;             // iariables referred to the Fourier cartesian grid
   float lconv;            // Size of the convolution window
   float lconv_h;           // Half size of the convolution window
@@ -94,9 +69,9 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
   float scaling;          // Convert frequencies to grid units
   float tblspcg;
   float convolv;
-  float ctr;              // Variable to store the center of rotation axis 		  
-  fftwf_complex *cproj;           
-  float SIN, COS;     
+  float ctr;              // Variable to store the center of rotation axis
+  fftwf_complex *cproj;
+  float SIN, COS;
   float *work;
   fftwf_complex *H;
   float *filter_stand;
@@ -112,9 +87,9 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
 
 
   /*
-   *   Get external parameters 
+   *   Get external parameters
    */
-    
+
     ctr = (float) param[0];
     type_filter = (int)param[1];
     flag_filter = (int)param[2];
@@ -122,7 +97,7 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
     interp = (int) param[4];
     ltbl = (int) param[5];
     lconv = (float) param[6];
-    radon_degree = (int) param[7];   
+    radon_degree = (int) param[7];
 
 
 
@@ -130,14 +105,14 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
   /*
    *   Open wisdom file for computing FFTW
    */
-  
+
   FILE *fp = fopen(fftwfn,"r");
   if(fp){
     fftwf_import_wisdom_from_file(fp); // Load wisdom file for faster FFTW
     fclose(fp);
   }
 
-  
+
   /*
    *   Calculate number of operative pixels
    *   This number is equal to smallest power of 2 which >= to the original
@@ -167,7 +142,7 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
       cproj[n][0]=0;
       cproj[n][1]=0;
   }
-     
+
   time_fft += clock() - time_fft_s;
 
 
@@ -176,14 +151,14 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
    *   Initialize look-up-table for the PSWF interpolation kernel and
    *   for the correction matrix
    */
-  
-  //lconv = (float)( 2 * C * 1.0 / PI ); 
-  lconv_h = lconv * 0.5; 
-  tblspcg = 2 * ltbl / lconv;
-  work = (float *)calloc( lconv + 1 , sizeof(float) ); 
 
-  
-  
+  //lconv = (float)( 2 * C * 1.0 / PI );
+  lconv_h = lconv * 0.5;
+  tblspcg = 2 * ltbl / lconv;
+  work = (float *)calloc( lconv + 1 , sizeof(float) );
+
+
+
   /*
    *   Get center of rotation axis
    */
@@ -193,7 +168,7 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
   if( pdim != npix )
     ctr += (float) padleft;
 
-   
+
 
   /*
    *   Use standard filter
@@ -210,7 +185,7 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
    *   Multiply input filter array per complex exponential in order
    *   to correct for the center of rotation axis
    */
-  
+
   else if( flag_filter == 1){
     tmp = (float)( 2 * PI * ctr / pdim );
     norm = (float)( PI / pdim / nang );
@@ -223,42 +198,42 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
         filter_ext[j+1] = -fValue*norm * sin(x);
     }
   }
-  time_fft += clock() - time_fft_s;  
+  time_fft += clock() - time_fft_s;
 
 
-  
+
   /*
    *   Allocate memory for cartesian Fourier grid
    */
-  
+
   time_fft_s = clock();
   H = (fftwf_complex*)fftwf_malloc(pdim*pdim*sizeof(fftwf_complex));
   for(n=0;n<pdim*pdim;n++){
       H[n][0]=0;
       H[n][1]=0;
   }
-  
+
   fftwf_plan p1 = fftwf_plan_dft_1d(pdim, cproj, cproj, FFTW_FORWARD, FFTW_ESTIMATE);
   fftwf_plan p =  fftwf_plan_dft_2d(pdim, pdim, H, H,
-                                    FFTW_BACKWARD, FFTW_ESTIMATE); 
+                                    FFTW_BACKWARD, FFTW_ESTIMATE);
   time_fft += clock() - time_fft_s;
 
-  
-  
+
+
   /*
-   *   Interpolation of the polar Fourier grid with PSWF 
+   *   Interpolation of the polar Fourier grid with PSWF
    */
 
   time_conv_s = clock();
   float tmp2 = 1.0/pdim;
-  
-  for( n=0 ; n<nang ; n++ ){ 
+
+  for( n=0 ; n<nang ; n++ ){
 
     /*
      *   Store each projection inside "cproj" and, at the same
      *   time, perform the edge-padding of the projection
      */
-    
+
     i = 0;
     j = 0;
     k = 0;
@@ -274,7 +249,7 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
     }
 
     while( i < padright ){
-      cproj[j][0] = sino[ n * npix + k ];   
+      cproj[j][0] = sino[ n * npix + k ];
       cproj[j][1] = 0.0;
       i += 1;
       j += 1;
@@ -285,7 +260,7 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
       if ( radon_degree )
         cproj[j][0] = 0.0 ;
       else
-        cproj[j][0] = sino[ n * npix + npix - 1 ];  
+        cproj[j][0] = sino[ n * npix + npix - 1 ];
       cproj[j][1] = 0.0;
       i += 1;
       j += 1;
@@ -296,37 +271,37 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
     /*
      *   Perform 1D FFT of the projection
      */
-     
+
      time_fft1_s = clock();
      fftwf_execute(p1);
      time_fft1 += clock() - time_fft1_s;
 
-    
+
     /*
      *   Loop on the first half Fourier components of
      *   each FFT-transformed projection (one exploits
-     *   here the hermitianity of the FFT-array related 
+     *   here the hermitianity of the FFT-array related
      *   to an original real array)
      */
 
-    for( j=0, w=0 ; j < pdim_h ; j++, w++ ) {  
-      
+    for( j=0, w=0 ; j < pdim_h ; j++, w++ ) {
+
       if( flag_filter != 2 ){
 	    Ctmp1R = filter_stand[2*j];
 	    Ctmp1I = filter_stand[2*j+1];
       }
       else if( flag_filter == 2 ){
 	    Ctmp1R = filter_ext[2*j];
-	    Ctmp1I = filter_ext[2*j+1];       
+	    Ctmp1I = filter_ext[2*j+1];
       }
-	
+
 	  Ctmp2R = tmp2 * cproj[j][0];
 	  Ctmp2I = tmp2 * cproj[j][1];
-	
+
 	  if( j!=0 ){
 	    Ctmp3R = tmp2 * cproj[pdim-j][0];
 	    Ctmp3I = tmp2 * cproj[pdim-j][1];
-	
+
         Cdata1R = Ctmp1R * Ctmp3R  -  Ctmp1I * Ctmp3I;
         Cdata1I = Ctmp1R * Ctmp3I  +  Ctmp1I * Ctmp3R;
 
@@ -338,10 +313,10 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
 
 	  else {
 	    Cdata1R = Ctmp1R * Ctmp2R;
-	    Cdata1I = Ctmp1R * Ctmp2I;  
+	    Cdata1I = Ctmp1R * Ctmp2I;
 	    Cdata2R = 0.0;
 	    Cdata2I = 0.0;
-	  }    
+	  }
 
 
       /*
@@ -350,7 +325,7 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
       SIN = sin( angles[n] * PI / 180 );
       COS = cos( angles[n] * PI / 180 );
       scaling = 1.0;
-      U = ( rtmp = scaling * w ) * COS + pdim_h; 
+      U = ( rtmp = scaling * w ) * COS + pdim_h;
       V = rtmp * SIN + pdim_h;
 
 
@@ -359,13 +334,13 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
        *   of the points receiving the contribution from
        *   the selected polar Fourier sample
        */
-     
+
       iul = (long)ceil( U - lconv_h ); iuh = (long)floor( U + lconv_h );
       ivl = (long)ceil( V - lconv_h ); ivh = (long)floor( V + lconv_h );
 
-      if ( iul<0 ) iul = 0; if ( iuh >= pdim ) iuh = pdim-1;   
+      if ( iul<0 ) iul = 0; if ( iuh >= pdim ) iuh = pdim-1;
       if ( ivl<0 ) ivl = 0; if ( ivh >= pdim ) ivh = pdim-1;
-     
+
 
       /*
        *   Get convolvent values with nearest neighbour
@@ -378,39 +353,39 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
       }
       else{
         for (iv = ivl, k=0; iv <= ivh; iv++, k++)
-	        work[k] = convolv_lin( myAbs( V - iv ) * tblspcg , lut );         
+	        work[k] = convolv_lin( myAbs( V - iv ) * tblspcg , lut );
       }
 
      /*
       *   Calculate the contribution of each polar Fourier point
-      *   for all the neighbouring cartesian Fourier points 
+      *   for all the neighbouring cartesian Fourier points
       */
-    
+
       for( iu=iul ; iu<=iuh ; iu++ ){
         if( interp == 0)
 	        rtmp = convolv_nn( myAbs( U - iu ) * tblspcg , lut );
         else
             rtmp = convolv_lin( myAbs( U - iu ) * tblspcg , lut );
-	    
+
         for( iv=ivl , k=0 ; iv<= ivh ; iv++,k++ ){
 	      convolv = rtmp * work[k];
-          
-          if (iu!=0 && iv!=0 && w!=0) { 
+
+          if (iu!=0 && iv!=0 && w!=0) {
 		    H[iu * pdim + iv][0] += convolv * Cdata1R;
             H[iu * pdim + iv][1] += convolv * Cdata1I;
             H[(pdim-iu) * pdim + pdim - iv][0] += convolv * Cdata2R;
             H[(pdim-iu) * pdim + pdim - iv][1] += convolv * Cdata2I;
-          } 
+          }
           else {
             H[iu * pdim + iv][0] += convolv * Cdata1R;
             H[iu * pdim + iv][1] += convolv * Cdata1I;
           }
-        } // End loop on y-coordinates of the cartesian neighbours 
+        } // End loop on y-coordinates of the cartesian neighbours
 	  } // End loop on x-coordinates of the cartesian neighbours
-    } // End loop on transform data   
+    } // End loop on transform data
   } // End for loop on angles
 
-  fftwf_destroy_plan(p1); 
+  fftwf_destroy_plan(p1);
 
   time_conv += clock() - time_conv_s - time_fft1;
   time_fft += time_fft1;
@@ -420,14 +395,14 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
   /*
    *   Perform 2D FFT of the cartesian Fourier Grid
    */
-  
+
    time_fft_s = clock();
    //fftwf_plan p =  fftwf_plan_dft_2d(pdim, pdim, H, H,
    //                                  FFTW_BACKWARD, FFTW_ESTIMATE);
    fftwf_execute(p);
    time_fft += clock() - time_fft_s;
 
-   fftwf_destroy_plan(p); 
+   fftwf_destroy_plan(p);
 
 
 
@@ -435,27 +410,27 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
    *  Multiplication for the PSWF correction matrix
    */
 
-  
+
   time_deapod_s = clock();
   j = 0;
   ustart = pdim - pdim_h;
   ufin = pdim;
- 
-  while (j < pdim){    
+
+  while (j < pdim){
     for( iu = ustart ; iu < ufin ; j++ , iu++ ){
       //corrn_u = winv[j];
       k = 0;
       vstart = pdim - pdim_h ;
       vfin = pdim;
-      
+
       while( k < pdim ){
 	    for( iv = vstart ; iv < vfin ; k++ , iv++ ) {
 	      //corrn = corrn_u * winv[k];
- 
+
 	      /*
            *   Select the centered square npix * npix
            */
- 
+
      	  if( padleft <= j && j < padright && padleft <= k && k < padright ){
 	        index = ( npix - 1 - ( k-padleft) ) * npix + (j-padleft);
 	        rec[index] = deapod[j * pdim + k] * H[iu * pdim + iv][0];
@@ -463,22 +438,22 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
             /*
             if ( index == ( (int)( npix * 0.5 ) - 1 ) * npix + ( (int)( npix * 0.5 ) -1 ) ){
                 printf("\nImage apod ind. %d :  %.9f", H[iu * pdim + iv][0], index);
-                printf("\nImage deapod ind. %d : %.9f", rec[index], index);  
+                printf("\nImage deapod ind. %d : %.9f", rec[index], index);
             }
             if ( index == ( 1430 - 1 ) * npix + ( 1027 - 1 ) ){
                 printf("\nImage apod ind. %d :  %.9f", H[iu * pdim + iv][0], index);
-                printf("\nImage deapod ind. %d : %.9f", rec[index], index);  
+                printf("\nImage deapod ind. %d : %.9f", rec[index], index);
             }
             if ( index == ( 1944 - 1 ) * npix + ( 1024 - 1 ) ){
                 printf("\nImage apod ind. %d :  %.9f", H[iu * pdim + iv][0], index);
-                printf("\nImage deapod ind. %d : %.9f", rec[index], index);  
+                printf("\nImage deapod ind. %d : %.9f", rec[index], index);
             }
             */
-	      }	  
+	      }
 	    }
-      
+
 	    if (k < pdim) {
-	      vstart = 0; 
+	      vstart = 0;
       	  vfin = pdim_h;
       	}
       } // End while loop on k
@@ -498,7 +473,7 @@ void gridrec_v4_backproj( float *sino , int npix , int nang , float *angles , fl
   /*
    *  Free memory
    */
-  
+
   fftwf_free( cproj );
   fftwf_free( H );
   free( work );
@@ -529,7 +504,7 @@ void create_fftw_wisdom_file(char *fn, int npix){
     fftwf_plan p1 =  fftwf_plan_dft_1d(pdim,
                                 H2,H2,
                                 FFTW_FORWARD, FFTW_MEASURE);
-                                
+
     fp = fopen(fn,"w");
     if(fp){
         fftwf_export_wisdom_to_file(fp);
