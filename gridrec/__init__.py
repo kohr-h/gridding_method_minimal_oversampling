@@ -1,3 +1,3 @@
-from ._gridrec import fwdproj, backproj, _create_fftw_wisdom_file
+from .proj import gridding_fwdproj_backproj, gridding_fbp, gridding_scipy_operator
 
 __version__ = "0.1"

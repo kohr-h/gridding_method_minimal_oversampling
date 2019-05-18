@@ -3,8 +3,6 @@ import cython
 import numpy as np
 cimport numpy as np
 
-np.import_array()
-
 cdef extern void gridrec_v4_backproj(
     float *S,
     int npix,
@@ -61,8 +59,6 @@ def backproj(
         cfn = "~/tomcat/Programs/pymodule_gridrec_v4/profile.wis"
 
     nang, npix = sinogram.shape[0], sinogram.shape[1]
-    myFloat = sinogram.dtype
-
     image = np.zeros((npix, npix), dtype='float32', order='C')
 
     cdef float [:,::1] cimage = image
@@ -104,8 +100,6 @@ def fwdproj(
 
     npix = image.shape[0]
     nang = len(angles)
-    myFloat = image.dtype
-
     sino = np.zeros((nang, npix), dtype='float32', order='C')
 
     cdef float [:, ::1] csino = sino
