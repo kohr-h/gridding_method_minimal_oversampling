@@ -131,8 +131,9 @@ def kb_lut_deapod(W, G, alpha, interp, S=None, eps_s=1e-3):
         if interp == "nn":
             S = int(0.91 / (eps_s * alpha))
         elif interp == "lin":
-            S = int((0.37 / eps_s) / alpha)
+            S = int(np.sqrt(0.37 / eps_s) / alpha)
 
+    # NB: beta / pi in paper notation
     beta = np.sqrt(((W / alpha) * (alpha - 0.5)) ** 2 - 0.8)
     if np.any(np.isnan(beta)):
         raise RuntimeError(
@@ -151,12 +152,11 @@ def kb_lut_deapod(W, G, alpha, interp, S=None, eps_s=1e-3):
     lut = lut.astype("float32")
 
     ##  Compute deapodization matrix
-    nh = G // 2
-    x = np.linspace(-nh, nh, G)
-    f = np.sqrt((W * x / G) ** 2 - beta ** 2, dtype=complex)
+    x = np.linspace(-G // 2, G // 2, G, dtype=complex)
+    f = np.sqrt((W * x / G) ** 2 - beta ** 2)
     deapod = np.abs(np.sinc(f))
-    deapod[:] /= deapod[nh]
-    deapod += eps_s
+    deapod[:] /= deapod[G // 2]
+    deapod += EPS
 
     # Normalization factor for KB
     lmbda_lut = np.array(
@@ -176,6 +176,10 @@ def kb_lut_deapod(W, G, alpha, interp, S=None, eps_s=1e-3):
     norm = np.sqrt(1 / (W * lmbda))
     deapod[:] = norm / deapod
     deapod = deapod.astype("float32")
+
+    # Multiply with +-1 alternatingly, middle one should be +1
+    sign_arr = 1 - 2 * np.mod(np.arange(G) - G // 2, 2)
+    deapod *= sign_arr
 
     return lut, np.outer(deapod, deapod)
 

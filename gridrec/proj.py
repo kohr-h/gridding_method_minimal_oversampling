@@ -18,7 +18,7 @@ filter_nums = {v: k for k, v in filters.items()}
 
 def gridding_fwdproj_backproj(
     num_px,
-    angles_rad,
+    angles_deg,
     kernel="kb",
     oversampl=1.25,
     W=7.0,
@@ -28,7 +28,7 @@ def gridding_fwdproj_backproj(
 ):
     """TODO: doc."""
     num_px = int(num_px)
-    angles_rad = np.asarray(angles_rad, dtype="float32")
+    angles_deg = np.asarray(angles_deg, dtype="float32")
     kernel, kernel_in = str(kernel).lower(), kernel
     oversampl = float(oversampl)
     W = W * 2 / np.pi
@@ -62,18 +62,18 @@ def gridding_fwdproj_backproj(
 
     def forward_projector(image):
         image = image.astype("float32", copy=False)
-        return _gridrec.fwdproj(image, angles_rad, param, ker_lut, ker_deapod)
+        return _gridrec.fwdproj(image, angles_deg, param, ker_lut, ker_deapod)
 
     def back_projector(sino):
         sino = sino.astype("float32", copy=False)
-        return _gridrec.backproj(sino, angles_rad, param, ker_lut, ker_deapod)
+        return _gridrec.backproj(sino, angles_deg, param, ker_lut, ker_deapod)
 
     return forward_projector, back_projector
 
 
 def gridding_scipy_operator(
     num_px,
-    angles_rad,
+    angles_deg,
     kernel="kb",
     oversampl=1.25,
     W=7.0,
@@ -83,21 +83,24 @@ def gridding_scipy_operator(
 ):
     from scipy.sparse.linalg import LinearOperator
 
+    angles_deg = np.asarray(angles_deg, dtype="float32")
+    num_angles = angles_deg.size
+
     fwd_proj, back_proj = gridding_fwdproj_backproj(
-        num_px, angles_rad, kernel, oversampl, W, err_samp, interp, radon_degree
+        num_px, angles_deg, kernel, oversampl, W, err_samp, interp, radon_degree
     )
-    G = lut.next_fast_oversamp_size(num_px, oversampl)
+
 
     def matvec(a):
         image = np.asarray(a, dtype="float32").reshape((num_px, num_px))
-        return fwd_proj(image)
+        return fwd_proj(image).ravel()
 
     def rmatvec(a):
-        sino = np.asarray(a, dtype="float32").reshape((G, num_px))
-        return back_proj(sino)
+        sino = np.asarray(a, dtype="float32").reshape((num_angles, num_px))
+        return back_proj(sino).ravel()
 
     return LinearOperator(
-        shape=(G * num_px, num_px * num_px),
+        shape=(num_angles * num_px, num_px * num_px),
         dtype="float32",
         matvec=matvec,
         rmatvec=rmatvec,
@@ -106,7 +109,7 @@ def gridding_scipy_operator(
 
 def gridding_fbp(
     num_px,
-    angles_rad,
+    angles_deg,
     filter="ramp",
     kernel="kb",
     oversampl=1.25,
@@ -117,7 +120,7 @@ def gridding_fbp(
 ):
     """TODO: doc."""
     num_px = int(num_px)
-    angles_rad = np.asarray(angles_rad, dtype="float32")
+    angles_deg = np.asarray(angles_deg, dtype="float32")
     filter, filter_in = str(filter).lower(), filter
     kernel, kernel_in = str(kernel).lower(), kernel
     oversampl = float(oversampl)
@@ -156,6 +159,6 @@ def gridding_fbp(
 
     def fbp(sino):
         sino = sino.astype("float32", copy=False)
-        return _gridrec.backproj(sino, angles_rad, param, ker_lut, ker_deapod)
+        return _gridrec.backproj(sino, angles_deg, param, ker_lut, ker_deapod)
 
     return fbp

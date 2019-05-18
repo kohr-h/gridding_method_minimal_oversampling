@@ -61,7 +61,7 @@ def backproj(
     nang, npix = sinogram.shape[0], sinogram.shape[1]
     image = np.zeros((npix, npix), dtype='float32', order='C')
 
-    cdef float [:,::1] cimage = image
+    cdef float [:, ::1] cimage = image
 
     gridrec_v4_backproj(
         &sinogram[0, 0],
