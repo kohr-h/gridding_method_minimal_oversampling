@@ -58,13 +58,13 @@ def gridding_fwdproj_backproj(
         dtype="float32",
     )
 
-    def forward_projector(image):
+    def forward_projector(image, sino_out=None):
         image = image.astype("float32", copy=False)
-        return _gridrec.fwdproj(image, angles_deg, param, ker_lut, ker_deapod)
+        return _gridrec.fwdproj(image, angles_deg, param, ker_lut, ker_deapod, sino_out)
 
-    def back_projector(sino):
+    def back_projector(sino, image_out=None):
         sino = sino.astype("float32", copy=False)
-        return _gridrec.backproj(sino, angles_deg, param, ker_lut, ker_deapod)
+        return _gridrec.backproj(sino, angles_deg, param, ker_lut, ker_deapod, image_out)
 
     return forward_projector, back_projector
 
