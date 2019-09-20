@@ -1,3 +1,5 @@
+from __future__ import division, print_function
+
 import numpy as np
 
 EPS = 1e-8
@@ -47,6 +49,7 @@ def prolate_lut_deapod(W, G, alpha, interp, S=None, eps_s=1e-3):
             S = int((0.37 / eps_s) / alpha)
 
     # Compute kernel LUT using Legendre polynomial approximation
+    # fmt: off
     leg_coeffs = np.array(
         [0.5767616e02, 0.0,
          -0.8931343e02, 0.0,
@@ -60,11 +63,14 @@ def prolate_lut_deapod(W, G, alpha, interp, S=None, eps_s=1e-3):
          -0.1295941e-05, 0.0,
          0.3817796e-07]
     )
+    # fmt: on
     x = np.linspace(0, 1, S, endpoint=False)
+    # fmt: off
     lut = (
         np.polynomial.legendre.legval(x, leg_coeffs)
         / np.polynomial.legendre.legval(0.0, leg_coeffs)
     )
+    # fmt: on
     lut = np.pad(lut, (0, 5), "constant", constant_values=0)
     lut = lut.astype("float32")
 
@@ -159,6 +165,7 @@ def kb_lut_deapod(W, G, alpha, interp, S=None, eps_s=1e-3):
     deapod += EPS
 
     # Normalization factor for KB
+    # fmt: off
     lmbda_lut = np.array(
         [[2.0, 0.6735177854455913],
          [1.9, 0.6859972251713252],
@@ -171,6 +178,7 @@ def kb_lut_deapod(W, G, alpha, interp, S=None, eps_s=1e-3):
          [1.2, 0.8762210440212161],
          [1.1, 0.9373402868152573]]
     )[::-1]
+    # fmt: on
     lmbda = np.interp(alpha, lmbda_lut[:, 0], lmbda_lut[:, 1])
 
     norm = np.sqrt(1 / (W * lmbda))

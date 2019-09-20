@@ -1,8 +1,8 @@
 from __future__ import division, print_function
+
 import numpy as np
 
-from . import lut
-from . import _gridrec
+from . import _gridrec, lut
 
 filters = {
     0: "none",
@@ -41,9 +41,7 @@ def gridding_fwdproj_backproj(
             W, G, oversampl, interp, eps_s=err_samp
         )
     elif kernel in {"kb", "kaiser-bessel"}:
-        ker_lut, ker_deapod = lut.kb_lut_deapod(
-            W, G, oversampl, interp, eps_s=err_samp
-        )
+        ker_lut, ker_deapod = lut.kb_lut_deapod(W, G, oversampl, interp, eps_s=err_samp)
     else:
         raise ValueError("unknown kernel {!r}".format(kernel_in))
 
@@ -89,7 +87,6 @@ def gridding_scipy_operator(
     fwd_proj, back_proj = gridding_fwdproj_backproj(
         num_px, angles_deg, kernel, oversampl, W, err_samp, interp, radon_degree
     )
-
 
     def matvec(a):
         image = np.asarray(a, dtype="float32").reshape((num_px, num_px))
@@ -138,9 +135,7 @@ def gridding_fbp(
             W, G, oversampl, interp, eps_s=err_samp
         )
     elif kernel in {"kb", "kaiser-bessel"}:
-        ker_lut, ker_deapod = lut.kb_lut_deapod(
-            W, G, oversampl, interp, eps_s=err_samp
-        )
+        ker_lut, ker_deapod = lut.kb_lut_deapod(W, G, oversampl, interp, eps_s=err_samp)
     else:
         raise ValueError("unknown kernel {!r}".format(kernel_in))
 

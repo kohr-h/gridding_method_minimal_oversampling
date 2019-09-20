@@ -1,8 +1,18 @@
 import os
 import shutil
+import sys
+from distutils.core import Command
+from distutils.extension import Extension
 from itertools import product
 from os import path
+
 from setuptools import setup
+
+try:
+    from Cython.Build import cythonize
+except ImportError:
+    print("Cython is required to build the package. Exiting.")
+    sys.exit(1)
 
 
 # Define global path variables
@@ -29,8 +39,6 @@ def get_common_extension_args():
 
 
 def get_cython_extensions():
-    from distutils.extension import Extension
-    from Cython.Build import cythonize
 
     ext_modules = []
     common_extension_args = get_common_extension_args()
@@ -56,9 +64,6 @@ if path.exists("MANIFEST"):
 
 
 # Define custom clean command
-from distutils.core import Command
-
-
 class CleanCommand(Command):
     """Custom distutils command to clean the .so and .pyc files."""
 
