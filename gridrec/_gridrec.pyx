@@ -14,7 +14,7 @@ cdef extern void gridrec_v4_backproj(
     float *filt,
     float *I,
     char *fftwfn,
-)
+) nogil
 
 cdef extern void gridrec_v4_forwproj(
     float *S,
@@ -26,7 +26,7 @@ cdef extern void gridrec_v4_forwproj(
     float *deapod,
     float *I,
     char *fftwfn,
-)
+) nogil
 
 cdef extern void create_fftw_wisdom_file(char *fn, int npix)
 
@@ -63,18 +63,19 @@ def backproj(
 
     cdef float [:, ::1] cimage = image
 
-    gridrec_v4_backproj(
-        &sinogram[0, 0],
-        npix,
-        nang,
-        &angles[0],
-        &param[0],
-        &lut[0],
-        &deapod[0, 0],
-        &filt[0],
-        &cimage[0, 0],
-        cfn
-    )
+    with nogil:
+        gridrec_v4_backproj(
+            &sinogram[0, 0],
+            npix,
+            nang,
+            &angles[0],
+            &param[0],
+            &lut[0],
+            &deapod[0, 0],
+            &filt[0],
+            &cimage[0, 0],
+            cfn
+        )
 
     return image
 
@@ -104,16 +105,17 @@ def fwdproj(
 
     cdef float [:, ::1] csino = sino
 
-    gridrec_v4_forwproj(
-        &csino[0, 0],
-        npix,
-        nang,
-        &angles[0],
-        &param[0],
-        &lut[0],
-        &deapod[0, 0],
-        &image[0, 0],
-        cfn,
-    )
+    with nogil:
+        gridrec_v4_forwproj(
+            &csino[0, 0],
+            npix,
+            nang,
+            &angles[0],
+            &param[0],
+            &lut[0],
+            &deapod[0, 0],
+            &image[0, 0],
+            cfn,
+        )
 
     return sino
